@@ -1,17 +1,12 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
-import * as babel from '@babel/core';
 import * as fs from 'fs';
-import { basename, join } from 'path';
+import { join } from 'path';
+import { getLists } from './common';
 
 const fromDirname = (...p) => join(__dirname, ...p);
 const fromDist = (...p) => join(__dirname, '../dist', ...p);
 
-const components = ['parser', 'detector', 'special'];
-const lists = components.map((name) =>
-  fs
-    .readdirSync(fromDirname('../src', name))
-    .map((item) => basename(item, '.js')),
-);
+const lists = getLists();
 
 const [parser, detector, special] = lists;
 
@@ -52,21 +47,3 @@ fs.writeFileSync(
   ),
   'utf-8',
 );
-
-// Writing index files
-components.forEach((component, index) => {
-  // something like this also does `create-index` package
-  const list = lists[index];
-  const result = babel.transformSync(
-    list
-      .map(
-        (itemName) =>
-          `export { default as "${itemName}" } from './${itemName}';`,
-      )
-      .join('\n'),
-    {
-      configFile: fromDirname('../.babelrc'),
-    },
-  );
-  fs.writeFileSync(fromDist(component, 'index.js'), result.code, 'utf-8');
-});
